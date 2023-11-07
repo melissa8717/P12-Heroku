@@ -5,7 +5,7 @@
       "default": true
     }
   ],
-  "name": "P12",
+  "name": "Heroku",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "58.0"
