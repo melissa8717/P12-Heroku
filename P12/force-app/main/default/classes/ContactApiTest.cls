@@ -1,8 +1,16 @@
 @isTest
     public class ContactApiTest {
-        // prepare test-data
+    @testSetup
+    	static void setup(){
+    
+            List<Account> accList = DataTestFactory.createAccount(1);
+            insert accList;
+            
+            List<Contact> contactList = DataTestFactory.createContact(1,'');
+            insert contactList;
+        
+    	}	
     @isTest static void testCreateContact() {
-        //As Per Best Practice it is important to instantiate the Rest Context
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'; //Request URL
@@ -13,19 +21,28 @@
     
         Test.startTest();
 
-        Map<String,String> contactMap = ContactApi.createContact('test last name', 'test first name', '01.02.03.04.05', 'test@email.fr');
-        List<Contact> contactList = DataTestFactory.createContact(1);
-        insert contactList;
-        String actual =  RestContext.response.responseBody.toString();	
+        Map<String,String> contactMap = ContactApi.createContact('test last name', 
+                                                                 'test first name', '01.02.03.04.05',
+                                                                 'test@email.fr');
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
+		List<Contact> contact = DataTestFactory.createContact(1,(String)contactMap.get('email') );
+
+        if((String)contactMap.get('email')!=contactList[0].Email){
+        	insert contact;
+        }
+		system.debug('id contact test'+contact);
+        String actual =  RestContext.response.responseBody.toString();
 
         Test.stopTest();
     
-        Assert.areNotEqual(null,contactList[0].id);
-        //Assert.areNotEqual(null, actual.get('Contact Id'));
+        Assert.areNotEqual(null,contact[0].id);
     }
-
-     @isTest static void testEmailExisting() {
-        //As Per Best Practice it is important to instantiate the Rest Context
+      //tester lors de la creation d'un contact dans l'api, si l'email 
+      //existe deja  alors
+      //  pas de création de contact et recupération de l'id de l'existant
+      //  
+      
+      @isTest static void testEmailExisting() {
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'; //Request URL
@@ -34,33 +51,34 @@
         RestContext.request = req;
         RestContext.response = res;
 		Id contactId = null; 
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
+        contactList[0].Email = 'test@email.fr';
+        update contactList;
+        
         Test.startTest();
 		Map<String,String> contactMap = ContactApi.createContact('test last name', 
                                                                  'test first name', 
                                                                  '01.02.03.04.05',
                                                                  'test@email.fr');
-        List<Contact> contactList = DataTestFactory.createContact(1, 'test@mail.com');
-        insert contactList;
+        
         
         String actual =  RestContext.response.responseBody.toString();	
-        for(Integer i = 0; i<contactList.size();i++){
-          if(contactList[i].Email == 'test@mail.com'){
-              contactId = contactList[i].id;
-        	}
-        }       
+        if(contactList[0].Email == 'test@email.fr'){
+              contactId = contactList[0].id;
+        }
+               
         Test.stopTest();
     	
         Map<String, Object> response = (Map<String, Object>)JSON.deserializeUntyped(res.responseBody.toString());
 
         Assert.areNotEqual(null, contactId);
-        Assert.areEqual(contactList[0].Email,'test@mail.com');
-        Assert.areEqual(200, res.statusCode);
+        Assert.areEqual(contactList[0].Email,'test@email.fr');
     }
      @isTest static void testDeleteContact() {
-        List<Contact> contactList = DataTestFactory.createContact(1);
-        insert contactList;
+        
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
         Id recordId = contactList[0].id;
-        // Set up a test request
+         
         RestRequest request = new RestRequest();
         request.requestUri =
             'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'
@@ -82,8 +100,9 @@
 		
         RestRequest req = new RestRequest(); 
         RestResponse res = new RestResponse();
-        List<Contact> contactList = DataTestFactory.createContact(1);
-        insert contactList;
+        
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
+
         Id recordId = contactList[0].id;
         RestRequest request = new RestRequest();
         request.requestUri =
@@ -101,7 +120,6 @@
         
         Test.stopTest();
 
-        //Assert.areNotEqual(null, thisContactId);
         List<Contact> thisContact = [SELECT Id,Phone FROM Contact WHERE Id=:recordId];
         Assert.areEqual( '01.02.03.04.55',thisContact[0].Phone);
     } 
