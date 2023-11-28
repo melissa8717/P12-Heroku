@@ -1,114 +1,122 @@
-@RestResource(urlMapping='/Contact/*')
-global with sharing class ContactApi {
-    @HttpPost
-    /*global static String doPost(String lastname,
-        String phone) {
-        Contact contact = new Contact();
-        contact.LastName = lastname;
-        contact.phone = phone;
-        insert contact;
-        return contact.Id;
-    }*/
+@isTest
+    public class ContactApiTest {
+    @testSetup
+    	static void setup(){
     
-    global static Map<String,String> createContact(String lastname, String firstname, String phone,
-        String email) {
-        RestResponse res = RestContext.response;
-        res.addHeader('Content-Type', 'application/json');
-
-        List<Contact> contactList = [SELECT Id, Email FROM Contact WHERE Email =:email];
-		Map<String, String> contactIdMap = null;
-         system.debug('id contact'+contactList);
-            system.debug('size'+contactList.size());
-            system.debug('email'+email);
-
-		if(contactList.size() == 0){
-        	try{
+            List<Account> accList = DataTestFactory.createAccount(1);
+            insert accList;
             
-               Contact contact = new Contact(
-                	LastName = lastname,
-                    FirstName = firstname,
-                    Phone = phone,
-                    Email = email
-                );
-                insert contact;
-                system.debug('insert id'+contact.id);
-                
-                contactIdMap = new Map<String, String>{
-                    'Contact Id ' => contact.id,
-                     'Test' => 'test'
-                };
-                res.responseBody = Blob.valueOf(JSON.serialize(contactIdMap));
-                
-            	res.statusCode = 200;
-            }
-            catch(Exception e){
-                res.responseBody = Blob.valueOf(e.getMessage());
-                System.debug('error post'+e.getMessage());
-           	    res.statusCode = 500;
-            }
-                
-        }            
-        else{
-            try{
-                for(Integer i=0; i<contactList.size();i++){
-                     contactIdMap = new Map<String, String>{
-                        'Contact Id ' => contactList[i].Id,
-                         'Email' => contactList[i].Email
-                    };
-                }
-                res.responseBody = Blob.valueOf(JSON.serialize(contactIdMap));
-            	res.statusCode = 200;
-
-            }
-            catch(Exception e){
-                res.responseBody = Blob.valueOf(e.getMessage());
-           	    res.statusCode = 500;
-            }
-               
-        }
-        system.debug('id 1'+contactIdMap.get('Contact Id'));
-		return contactIdMap;
-    }   
-    @HttpDelete
-    global static void deleteContact() {
-        RestRequest request = RestContext.request;
-        String contactId = request.requestURI.substring(
-            request.requestURI.lastIndexOf('/')+1);
-        Contact thisContact = [SELECT Id, Desactivated__c FROM Contact WHERE Id = :contactId];
-        thisContact.Desactivated__c = true;
-        update thisContact;
-    }     
-    
-    @HttpPatch
-    global static void updateContact() {
-       RestResponse res = RestContext.response;
-       res.addHeader('Content-Type', 'application/json');
-	   
-       try{
-            RestRequest request = RestContext.request;
-            String contactId = request.requestURI.substring(request.requestURI.lastIndexOf('/')+1);
-            system.debug('idco'+contactId); 
-            Contact thisContact = [SELECT Id, Email FROM Contact WHERE Id = :contactId];
-            // Deserialize the JSON string into name-value pairs
-            system.debug('req'+request.requestbody.tostring());
-            Map<String, Object> params = (Map<String, Object>)JSON.deserializeUntyped(request.requestbody.tostring());
-            // Iterate through each parameter field and value
-          //// system.debug('map'+params); 
-          system.debug('parammap'+params.keySet());
-           for(String fieldName : params.keySet()) {
-                // Set the field and value on the Case sObject
-              thisContact.put(fieldName, params.get(fieldName));
-           }
-            update thisContact;
+            List<Contact> contactList = DataTestFactory.createContact(1,'');
+            insert contactList;
         
-           res.responseBody = Blob.valueOf(JSON.serialize(params));
-           res.statusCode = 200;
+    	}	
+    @isTest static void testCreateContact() {
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'; //Request URL
+        req.httpMethod = 'POST';
+    
+        RestContext.request = req;
+        RestContext.response= res;
+    
+        Test.startTest();
 
-       		
-       }
-        catch(Exception e){
-                res.responseBody = Blob.valueOf('error update : '+e.getMessage());
-           	    res.statusCode = 500;
-        }     
+        Map<String,String> contactMap = ContactApi.createContact('test last name', 
+                                                                 'test first name', '01.02.03.04.05',
+                                                                 'test@email.fr');
+        
+        List<Contact> contactList = DataTestFactory.createContact(1,'' );
+        insert contactList;
+        String actual =  RestContext.response.responseBody.toString();
+
+        Test.stopTest();
+    
+        Assert.areNotEqual(null,contactList[0].id);
     }
+      //tester lors de la creation d'un contact dans l'api, si l'email 
+      //existe deja  alors
+      //  pas de création de contact et recupération de l'id de l'existant
+      //  
+      
+      @isTest static void testEmailExisting() {
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'; //Request URL
+        req.httpMethod = 'POST';
+    
+        RestContext.request = req;
+        RestContext.response = res;
+		Id contactId = null; 
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
+        contactList[0].Email = 'test@email.fr';
+        update contactList;
+        
+        Test.startTest();
+		Map<String,String> contactMap = ContactApi.createContact('test last name', 
+                                                                 'test first name', 
+                                                                 '01.02.03.04.05',
+                                                                 'test@email.fr');
+        
+        
+        String actual =  RestContext.response.responseBody.toString();	
+        if(contactList[0].Email == 'test@email.fr'){
+              contactId = contactList[0].id;
+        }
+               
+        Test.stopTest();
+    	
+        Map<String, Object> response = (Map<String, Object>)JSON.deserializeUntyped(res.responseBody.toString());
+
+        Assert.areNotEqual(null, contactId);
+        Assert.areEqual(contactList[0].Email,'test@email.fr');
+    }
+     @isTest static void testDeleteContact() {
+        
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
+        Id recordId = contactList[0].id;
+         
+        RestRequest request = new RestRequest();
+        request.requestUri =
+            'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'
+            + recordId;
+        RestContext.request = request;
+        Test.startTest();
+
+        ContactApi.deleteContact();
+        List<Contact> contacts = [SELECT Id,Desactivated__c FROM Contact WHERE Id=:recordId];
+        contacts[0].Desactivated__c = true;
+        update contacts;
+        
+        Test.stopTest();
+
+        Assert.areEqual(1,contacts.size());
+        Assert.areEqual(true,contacts[0].Desactivated__c);
+    }
+     @isTest static void testUpdateContact() {
+		
+        RestRequest req = new RestRequest(); 
+        RestResponse res = new RestResponse();
+        
+        List<Contact> contactList = [SELECT Id, Email FROM Contact];
+
+        Id recordId = contactList[0].id;
+        RestRequest request = new RestRequest();
+        request.requestUri =
+         'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'
+         + recordId;
+        request.httpMethod = 'PATCH';
+        //request.addHeader('Content-Type', 'application/json');
+        request.requestBody = Blob.valueOf('{"Phone": "01.02.03.04.55"}');
+        RestContext.request = request;
+        RestContext.response= res;
+               
+        Test.startTest();
+        
+        String thisContactId = ContactApi.updateContact();
+        
+        Test.stopTest();
+
+        List<Contact> thisContact = [SELECT Id,Phone FROM Contact WHERE Id=:recordId];
+        Assert.areEqual( '01.02.03.04.55',thisContact[0].Phone);
+    } 
 }
