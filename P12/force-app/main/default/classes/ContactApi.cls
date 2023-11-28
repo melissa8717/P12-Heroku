@@ -8,35 +8,32 @@ global with sharing class ContactApi {
 
         List<Contact> contactList = [SELECT Id, Email FROM Contact WHERE Email =:email];
 		Map<String, String> contactIdMap = null;
-         system.debug('id contact'+contactList);
-            system.debug('size'+contactList.size());
-            system.debug('email'+email);
 
 		if(contactList.size() == 0){
-        	try{
-            
-               Contact contact = new Contact(
-                	LastName = lastname,
-                    FirstName = firstname,
-                    Phone = phone,
-                    Email = email
-                );
-                insert contact;
-                system.debug('insert id'+contact.id);
-                
-                contactIdMap = new Map<String, String>{
-                    'Contact Id ' => contact.id,
-                     'Test' => 'test'
-                };
-                res.responseBody = Blob.valueOf(JSON.serialize(contactIdMap));
-                
-            	res.statusCode = 200;
-            }
-            catch(Exception e){
-                res.responseBody = Blob.valueOf(e.getMessage());
-                System.debug('error post'+e.getMessage());
-           	    res.statusCode = 500;
-            }
+	        	try{
+	            
+	                Contact contact = new Contact(
+	                	LastName = lastname,
+	                    FirstName = firstname,
+	                    Phone = phone,
+	                    Email = email
+	                );
+	                insert contact;
+	                system.debug('insert id'+contact.id);
+	                
+	                contactIdMap = new Map<String, String>{
+	                    'Contact Id ' => contact.id,
+	                     'Test' => 'test'
+	                };
+	                res.responseBody = Blob.valueOf(JSON.serialize(contactIdMap));
+	                
+	            	res.statusCode = 200;
+	            }
+	            catch(Exception e){
+	                res.responseBody = Blob.valueOf(e.getMessage());
+	                System.debug('error post'+e.getMessage());
+	           	    res.statusCode = 500;
+	            }
                 
         }            
         else{
@@ -57,7 +54,6 @@ global with sharing class ContactApi {
             }
                
         }
-        system.debug('id 1'+contactIdMap.get('Contact Id'));
 		return contactIdMap;
     }   
     @HttpDelete
@@ -81,11 +77,8 @@ global with sharing class ContactApi {
             system.debug('idco'+contactId); 
             Contact thisContact = [SELECT Id, Email FROM Contact WHERE Id = :contactId];
             // Deserialize the JSON string into name-value pairs
-            system.debug('req'+request.requestbody.tostring());
             Map<String, Object> params = (Map<String, Object>)JSON.deserializeUntyped(request.requestbody.tostring());
             // Iterate through each parameter field and value
-          //// system.debug('map'+params); 
-          system.debug('parammap'+params.keySet());
            for(String fieldName : params.keySet()) {
                 // Set the field and value on the Case sObject
               thisContact.put(fieldName, params.get(fieldName));
