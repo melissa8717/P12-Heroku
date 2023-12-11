@@ -1,14 +1,7 @@
 @RestResource(urlMapping='/Contact/*')
 global with sharing class ContactApi {
     @HttpPost
-    /*global static String doPost(String lastname,
-        String phone) {
-        Contact contact = new Contact();
-        contact.LastName = lastname;
-        contact.phone = phone;
-        insert contact;
-        return contact.Id;
-    }*/
+
     
     global static Map<String,String> createContact(String lastname, String firstname, String phone,
         String email) {
@@ -16,12 +9,10 @@ global with sharing class ContactApi {
         res.addHeader('Content-Type', 'application/json');
 
         List<Contact> contactList = [SELECT Id, Email FROM Contact WHERE Email =:email];
-		Map<String, String> contactIdMap = null;
-         system.debug('id contact'+contactList);
-            system.debug('size'+contactList.size());
-            system.debug('email'+email);
+	Map<String, String> contactIdMap = null;
+       
 
-		if(contactList.size() == 0){
+	if(contactList.size() == 0){
         	try{
             
                Contact contact = new Contact(
@@ -50,10 +41,10 @@ global with sharing class ContactApi {
         }            
         else{
             try{
-                for(Integer i=0; i<contactList.size();i++){
+                for(Contact c : contactList){
                      contactIdMap = new Map<String, String>{
-                        'Contact Id ' => contactList[i].Id,
-                         'Email' => contactList[i].Email
+                        'Contact Id ' => c.Id,
+                         'Email' => c.Email
                     };
                 }
                 res.responseBody = Blob.valueOf(JSON.serialize(contactIdMap));
