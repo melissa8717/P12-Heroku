@@ -1,8 +1,6 @@
 @isTest
     public class ContactApiTest {
-        // prepare test-data
     @isTest static void testCreateContact() {
-        //As Per Best Practice it is important to instantiate the Rest Context
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'; //Request URL
@@ -20,15 +18,14 @@
 
         Test.stopTest();
     
-        Assert.areNotEqual(null,contactList[0].id);
-        //Assert.areNotEqual(null, actual.get('Contact Id'));
+        Assert.isNull(contactList[0].id);
     }
 
      @isTest static void testEmailExisting() {
         //As Per Best Practice it is important to instantiate the Rest Context
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
-        req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'; //Request URL
+        req.requestURI = 'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/';
         req.httpMethod = 'POST';
     
         RestContext.request = req;
@@ -90,7 +87,6 @@
          'https://ocrooms-dev-ed.develop.my.salesforce.com/services/data/v59.0/sobjects/Contact/'
          + recordId;
         request.httpMethod = 'PATCH';
-        //request.addHeader('Content-Type', 'application/json');
         request.requestBody = Blob.valueOf('{"Phone": "01.02.03.04.55"}');
         RestContext.request = request;
         RestContext.response= res;
@@ -101,8 +97,7 @@
         
         Test.stopTest();
 
-        //Assert.areNotEqual(null, thisContactId);
-        List<Contact> thisContact = [SELECT Id,Phone FROM Contact WHERE Id=:recordId];
+        Contact thisContact = [SELECT Id,Phone FROM Contact WHERE Id=:recordId];
         Assert.areEqual( '01.02.03.04.55',thisContact[0].Phone);
     } 
 }
