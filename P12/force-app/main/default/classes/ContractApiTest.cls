@@ -12,8 +12,8 @@
         RestContext.response= res;
     
         Test.startTest();
-
-        Map<String,String> contractMap = ContractApi.createContract('0012o00003OAt2iAAD', 'draft');
+	List<Account> accountList = DataTestFactory.createAccount(1);
+        Map<String,String> contractMap = ContractApi.createContract(accountList[0].id, 'draft');
         List<Contract> contractList = DataTestFactory.createContract(1);
         insert contractList;
         String actual =  RestContext.response.responseBody.toString();	
