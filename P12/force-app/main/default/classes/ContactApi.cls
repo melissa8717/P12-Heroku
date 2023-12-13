@@ -26,7 +26,7 @@ global with sharing class ContactApi {
                 
                 contactIdMap = new Map<String, String>{
                     'Contact Id ' => contact.id,
-                     'Test' => 'test'
+                     'Message' => 'Contact inseré'
                 };
                 res.responseBody = Blob.valueOf(JSON.serialize(contactIdMap));
                 
