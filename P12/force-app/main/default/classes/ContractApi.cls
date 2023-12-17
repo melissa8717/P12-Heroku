@@ -14,6 +14,8 @@ global with sharing class ContractApi {
             //ContractTerm = term
             );
             insert contract;
+	    contract.ExternalId__c = 'Ext'+contract.id;
+            update contract;
             system.debug('insert id'+contract.id);
                 
             contractIdMap = new Map<String, String>{
