@@ -22,6 +22,8 @@ global with sharing class ContactApi {
                     Email = email
                 );
                 insert contact;
+		contact.ExternalId__c = 'Ext'+contact.id;
+                update contact;
                 system.debug('insert id'+contact.id);
                 
                 contactIdMap = new Map<String, String>{
